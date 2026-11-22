@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>侧屏面板 · 规划图 · 1080×1920</title>
+<!-- 设计稿可直接打开。plan-data.js 为可选的本地历法数据。
+     截图参数：?canvas=1 裸画板；?canvas=1&annot=1 结构层；?canvas=1&sheet=cal|guide|memo|news 打开抽屉。 -->
+<style>
+  :root{
+    --paper:#F2EFE6; --card:#FCFAF4; --ink:#1A211C; --ink2:#4B544C; --muted:#5E685E;
+    --line:#E4DECF; --line2:#EEE9DC; --jade:#2A5F4E; --jade-d:#173F33; --jade-l:#E8EFE9;
+    --gold:#A87C45; --gold-d:#7E5A2C; --gold-l:#F3E9D6; --red:#A34A41; --red-l:#F7E9E5;
+    --shadow:0 2px 10px rgba(40,45,35,.04);
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  [hidden]{display:none!important}
+  html,body{margin:0;padding:0}
+  body{background:#141916;color:var(--ink);font:14px/1.6 "Microsoft YaHei UI","Microsoft YaHei","PingFang SC",sans-serif;
+    font-variant-numeric:tabular-nums;--board-height:1920px;--board-inset:56px}
+  body.workspace{--board-height:1872px;--board-inset:32px}
+  button{font-family:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  a{color:inherit;text-decoration:none}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--jade);outline-offset:3px}
+  .stage{position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
+  .wrap{position:absolute;left:50%;top:50%;width:1080px;height:var(--board-height);transform-origin:center}
+  .artboard{position:relative;width:1080px;height:var(--board-height);overflow:hidden;
+    padding:var(--board-inset) 40px;display:flex;flex-direction:column;background:var(--paper)}
+  body.app,body.canvas{background:var(--paper)}
+  body.app .toolbar,body.canvas .toolbar{display:none}
+  body.canvas .stage,body.actual .stage{position:static;overflow:visible}
+  body.canvas .wrap,body.actual .wrap{position:relative;left:auto;top:auto;transform:none;margin:0 auto}
+  body.actual .stage{padding:36px 0}
+  .artboard > .row2,.artboard > .quotes,.artboard > .row45,.artboard > .newsbar{margin-top:28px}
+  .label{font-size:17px;line-height:24px;font-weight:700;white-space:nowrap}
+  .muted{color:var(--muted);font-size:12px;line-height:18px}
+  .grow{flex:1}
+  .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;flex:none}
+  .sec-top{display:flex;align-items:center;min-height:24px}
+  .sec-top > * + *{margin-left:12px}
+  .more,.done-btn{font-size:13px;line-height:20px;font-weight:500;color:var(--jade);padding:3px 5px;white-space:nowrap}
+  .more:hover,.done-btn:hover{background:var(--jade-l);border-radius:5px}
+
+  /* 顶栏 */
+  .top{height:176px;display:flex;flex:none;align-items:center}
+  .top-l{width:392px;flex:none;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:18px}
+  .time{position:relative;top:3px;font-family:"Bahnschrift","DIN Alternate","Segoe UI",sans-serif;font-size:80px;font-weight:600;line-height:74px;letter-spacing:-1.5px}
+  .time .sec{font-size:16px;line-height:20px;letter-spacing:0;color:var(--muted);margin-left:8px;vertical-align:8px}
+  .dateline{margin-top:9px;font-size:17px;line-height:24px;color:var(--ink2)}
+  .top-r{min-width:0;flex:1;margin-left:34px}
+  .calbar{display:flex;align-items:center}
+  .calbar b{font-size:23px;font-weight:600;line-height:30px}
+  .calbar .more{margin-left:auto}
+  .three-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+  .wd{position:relative;border:1px solid var(--line);border-radius:9px;background:var(--card);padding:10px 12px 22px;text-align:left;min-height:92px}
+  .wd:hover,.wd.today{background:var(--jade-l)}
+  .wd .w{display:block;font-size:12px;line-height:17px;color:var(--muted)}
+  .wd .d{display:block;font-size:17px;font-weight:500;line-height:22px;margin:3px 0 2px}
+  .wd .ld{display:block;font-size:13px;line-height:19px;color:var(--muted)}
+  .wd.today{border-color:var(--jade)}
+  .wd.today .w,.wd.today .d{color:var(--jade-d)}
+  .wd .dots{position:absolute;left:12px;bottom:8px;display:flex}
+  .wd .dots .dot + .dot{margin-left:4px}
+  .wd .dot{width:6px;height:6px;border-radius:50%;background:#8FB3A0;display:block}
+  .wd .dot.p{background:var(--gold);box-shadow:0 0 0 2px rgba(168,124,69,.14)}
+  .wd .pen{position:absolute;right:10px;top:8px;font-size:10px;line-height:16px;padding:0 5px;border-radius:3px;color:var(--gold-d);background:var(--gold-l);border:1px solid #EADCC2}
+
+  /* 今日指南与备忘 */
+  .row2{height:700px;display:grid;grid-template-columns:540px 440px;gap:20px;flex:none}
+  .memo,.guide{padding:26px 27px;display:flex;flex-direction:column}
+  .guide{order:1;overflow:visible}
+  .memo{order:2}
+  .memo .cnt{font-size:12px;color:var(--muted)}
+  .memo-list{margin-top:16px}
+  .mi{display:flex;align-items:center;height:58px;border-bottom:1px solid var(--line2)}
+  .mi:last-child{border-bottom:0}
+  .cb{width:18px;height:18px;flex:none;border:1px solid #9C9D91;border-radius:4px;background:#fff;display:grid;place-items:center;font-size:10px;color:#fff}
+  .check-target{width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:6px}
+  .check-target:hover{background:var(--jade-l)}
+  .mi .t{font-size:15px;line-height:22px;flex:1;min-width:0;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mi .tag{font-size:11px;line-height:16px;flex:none;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:8px}
+  .memo-expand{margin-top:8px;height:24px;font-size:13px;color:var(--jade)}
+  .memo-add{margin-top:auto;min-height:48px;border:1px dashed #C8BEA9;border-radius:9px;color:var(--jade);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center}
+  .memo-add:hover{background:var(--jade-l)}
+  .memo-add button{width:100%;min-height:46px}
+  .memo-add input{border:0;outline:0;background:transparent;font:inherit;color:var(--ink);width:85%}
+  .lunar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;margin-top:19px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .lunar strong{font-size:16px;font-weight:600;line-height:24px}
+  .lunar small{font-size:12px;line-height:18px;color:var(--muted)}
+  .guide-meta{font-size:12px;line-height:18px;color:var(--muted);margin-top:11px}
+  .guide[data-guide-state="stale"],.guide[data-guide-state="pending"] .guide-meta{color:var(--gold-d)}
+  .guide-pending{padding-top:6px;display:flex;flex-direction:column;justify-content:flex-start;flex:1;min-height:0}
+  .gp-head{display:flex;align-items:center;padding:8px 0 20px;border-bottom:1px solid var(--line)}
+  .gp-stamp{width:104px;height:64px;flex:none;display:grid;place-items:center;border:1px solid var(--gold);border-radius:8px;
+    background:var(--gold-l);color:var(--gold-d);font-size:24px;line-height:1;font-weight:600;letter-spacing:.04em}
+  .gp-copy{flex:1;min-width:0;margin-left:18px}
+  .gp-copy b{display:block;font-size:18px;line-height:26px;color:var(--ink);font-weight:600}
+  .gp-copy span{display:block;font-size:13px;line-height:20px;color:var(--muted);margin-top:3px}
+  .gp-sub{font-size:12px;line-height:18px;letter-spacing:.18em;color:var(--muted);margin:22px 0 8px}
+  .gp-row{display:flex;align-items:flex-start;padding:10px 0;border-bottom:1px dotted var(--line2);font-size:15px;line-height:26px;color:var(--ink2)}
+  .gp-row .b-yi,.gp-row .b-ji{width:54px;box-sizing:border-box;flex:none;text-align:center;margin-right:14px;margin-top:2px}
+  .gp-note{font-size:12px;line-height:18px;color:var(--muted);margin-top:auto;padding-top:14px}
+  .guide-content{display:flex;flex-direction:column;flex:1;min-height:0}
+  .hero{display:flex;align-items:stretch;margin-top:12px}
+  .g-score{width:84px;flex:none;background:#F5EFE3;border-right:2px solid var(--gold);border-radius:8px 0 0 8px;padding:8px 0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .g-score .grade{width:auto;height:auto;border:0;background:transparent;border-radius:0;font-size:32px;line-height:40px;font-weight:700;color:var(--gold-d)}
+  .g-score .score{font-family:"Bahnschrift",sans-serif;font-size:20px;font-weight:600;line-height:27px;white-space:nowrap;margin-top:2px}
+  .g-score .score span{font-size:11px;font-weight:400;color:var(--muted);margin-left:3px}
+  .g-main{flex:1;min-width:0;margin-left:18px}
+  .hex b{font-size:18px;line-height:26px;font-weight:600}
+  .hex i{font-style:normal;color:var(--muted);margin:0 6px;font-size:12px}
+  .hex em{font-style:normal;font-size:12px;color:var(--jade);margin-left:9px}
+  .hex .n{font-size:13px;line-height:20px;color:var(--muted)}
+  .g-quote{margin-top:14px;border-top:2px solid var(--line2);padding-top:11px}
+  .g-quote-line{display:flex;align-items:baseline;flex-wrap:wrap}
+  .g-quote-line span{flex:1;min-width:0;font:400 22px/32px "Songti SC","STSong","SimSun",serif;color:var(--ink)}
+  .g-quote-line em{font-style:normal;font-size:12px;line-height:18px;color:var(--muted);margin-left:auto;padding-left:12px}
+  .g-quote small{display:block;font-size:14px;line-height:23px;color:var(--ink2);margin-top:8px;border-top:2px solid var(--line2);padding-top:9px}
+  .yiji-wrap{position:relative;margin-top:18px;display:flex;align-items:flex-start}
+  .yiji{flex:1;min-width:0;font-size:14px;line-height:24px;color:var(--ink2)}
+  .yiji > * + *{margin-top:4px}
+  .five-btn{flex:none;margin-left:8px;font-size:12.5px;line-height:18px;font-weight:600;color:var(--jade);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+  .five-btn:hover,.iconbtn:hover{background:var(--jade-l)}
+  .five-pop{position:absolute;top:calc(100% + 7px);left:0;width:440px;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 44px rgba(20,25,20,.20);padding:10px 14px 8px;opacity:0;transform:translateY(-6px);visibility:hidden;transition:opacity .16s,transform .16s}
+  .five-pop.open{opacity:1;transform:none;visibility:visible}
+  .fp-h{font-size:12px;color:var(--muted);font-weight:600}
+  .fp-h span{color:var(--red);margin-left:8px}
+  .frow{display:grid;grid-template-columns:34px 1fr 24px;gap:8px;align-items:center;min-height:38px;font-size:12px}
+  .track{height:2px;background:var(--line);display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .track i{width:5px;height:5px;border-radius:50%;background:var(--line)}
+  .track i.on{width:8px;height:8px}
+  .track i.on.pos{background:var(--jade)} .track i.on.mid{background:#B9B2A0} .track i.on.neg{background:var(--red)}
+  .frow .note{color:var(--muted)}
+  .v.pos{color:var(--jade)} .v.mid{color:var(--muted)} .v.neg{color:var(--red)}
+  .todo{flex:1;min-height:0;display:flex;flex-direction:column;margin-top:16px;border-top:1px solid var(--line2);padding-top:8px}
+  .todo-h{font-size:13px;line-height:20px;color:var(--ink2);font-weight:600;margin-bottom:6px}
+  .todo-cols{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr}
+  .todo-col{min-width:0;min-height:0;display:grid;grid-auto-rows:1fr}
+  .todo-col-r{border-left:1px solid var(--line2);padding-left:28px}
+  .todo-row{display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;align-items:center;font-size:14px;line-height:26px;padding:6px 0;border-bottom:1px dotted var(--line2);color:var(--ink2)}
+  .todo-col .todo-row:last-child{border-bottom:0}
+  .todo-row b{color:var(--jade-d);font-weight:600}
+  .todo-row span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+  .iconbtn{width:28px;height:28px;flex:none;border:1px solid var(--line);border-radius:50%;color:var(--jade);font-size:14px}
+  .b-yi,.b-ji{font-size:11px;font-weight:600;border-radius:3px;padding:1px 5px;color:#fff;margin-right:5px}
+  .b-yi{background:var(--jade)} .b-ji{background:var(--red)}
+  .one{display:block;margin-top:14px;background:var(--jade-l);border-left:3px solid var(--jade);padding:10px 14px 11px;border-radius:0 8px 8px 0}
+  .one-head{display:flex;align-items:baseline;margin-bottom:2px}
+  .one-head b{font-size:11.5px;line-height:18px;font-weight:600;letter-spacing:.08em;color:var(--jade-d)}
+  .one-head em{margin-left:auto;font-style:normal;font-size:11.5px;line-height:18px;color:var(--muted)}
+  .one > span{display:block;font:400 19px/28px "Songti SC","STSong","SimSun",serif;color:var(--ink)}
+  .one > small{display:block;font-size:12.5px;line-height:19px;color:var(--ink2);margin-top:3px}
+  .wbadge{margin-top:14px;font-size:14px;line-height:22px;color:var(--gold-d);background:var(--gold-l);border-radius:6px;padding:7px 10px}
+  .wbadge b{font-weight:600}
+
+  /* 经典 */
+  .quotes{height:356px;display:flex;flex-direction:column;padding:26px 28px 22px;flex:none}
+  .q-body{flex:none;height:218px;display:grid;grid-template-columns:58% 42%;min-height:0;margin-top:22px}
+  .q-left{border-right:0;border-left:4px solid var(--gold);padding-left:24px;padding-right:28px;display:flex;flex-direction:column;justify-content:center}
+  .q-left blockquote{margin:0;font:400 38px/1.45 "Songti SC","STSong","SimSun",serif}
+  .q-line1,.q-line2{display:block}
+  .q-line2{padding-left:3.5em}
+  .q-src{margin-top:12px;font-size:13px;line-height:19px;color:var(--muted);text-align:right}
+  .q-right{height:100%;box-sizing:border-box;margin-left:28px;background:#F8F3E7;border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;justify-content:flex-start}
+  .q-note-label{font-size:15px;line-height:22px;letter-spacing:.12em;font-weight:700;color:var(--jade);margin-bottom:6px}
+  .q-note-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+  .q-analysis{margin:0;font-size:16px;line-height:27px;color:var(--ink2);text-indent:2em}
+  .usage{margin-top:10px;font-size:13px;line-height:22px;color:var(--ink2);background:var(--jade-l);border-radius:6px;padding:8px 10px}
+  .q-right .usage{margin-top:0;background:transparent;border-top:1px solid var(--line2);border-radius:0;padding:10px 0 0}
+  .q-right .usage b{color:var(--jade-d);margin-right:8px}
+  .usage b{color:var(--jade-d);margin-right:8px}
+  .q-dots{display:flex;align-items:center;justify-content:center;margin-top:16px;min-height:24px}
+  .qdot{width:24px;height:24px;min-width:0;padding:0;display:grid;place-items:center;border-radius:50%}
+  .qdot::after{content:"";width:4px;height:4px;border-radius:50%;background:#969B91}
+  .qdot:hover::after{background:var(--gold)}
+  .qdot.on::after{width:6px;height:6px;background:var(--jade)}
+  .collapse-dot{position:fixed;left:16px;top:16px;width:44px;height:44px;border-radius:50%;z-index:90;display:none}
+  body.app .collapse-dot{display:grid;place-items:center}
+  .collapse-dot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--jade)}
+  .collapse-dot:hover{background:var(--jade-l)}
+  .artboard.panel-enter{animation:panelEnter .18s cubic-bezier(.2,.75,.25,1) both;transform-origin:38px 38px}
+  .artboard.panel-leave{animation:panelLeave .14s ease-in both;transform-origin:38px 38px}
+  @keyframes panelEnter{from{transform:translate(-4px,-3px) scale(.988)}to{transform:none}}
+  @keyframes panelLeave{from{transform:none}to{transform:translate(-3px,-2px) scale(.992)}}
+  @media (prefers-reduced-motion:reduce){.artboard.panel-enter,.artboard.panel-leave{animation:none}}
+
+  /* 天时与 GitHub */
+  .row45{height:400px;display:grid;grid-template-columns:420px 560px;gap:20px;flex:none}
+  .sky,.github{padding:26px 27px;display:flex;flex-direction:column}
+  .sky-hero{display:flex;align-items:baseline;margin-top:24px}
+  .sky-hero .cond{margin-left:12px}
+  .temp{font-family:"Bahnschrift",sans-serif;font-size:46px;font-weight:600;line-height:52px;letter-spacing:-1px}
+  .cond{font-size:16px;font-weight:500;line-height:24px}
+  .smeta{margin-left:auto;text-align:right;font-size:12px;line-height:18px;color:var(--muted)}
+  .sunrow{margin-top:10px;font-size:13px;line-height:20px;color:var(--ink2)}
+  .spark{width:100%;height:64px;display:block;margin-top:10px}
+  .fc{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:25px;padding-top:16px;border-top:1px solid var(--line)}
+  .fc div{text-align:center;min-width:0}
+  .fc div + div{border-left:1px solid var(--line2)}
+  .fc span,.fc em{display:block;font-size:12px;line-height:20px;color:var(--muted);font-style:normal}
+  .fc b{font:600 15px/22px "Bahnschrift",sans-serif;display:block}
+  .gh-list{margin-top:18px}
+  .gh-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%;text-align:left;padding:16px 2px;border-bottom:1px solid var(--line2)}
+  .gh-row:last-child{border-bottom:none}
+  .gh-row:hover{background:var(--jade-l)}
+  .gh-row span{display:block}
+  .gh-name{font-size:15px;line-height:22px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gh-summary{font-size:13px;line-height:20px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+  .gh-end{align-self:center;text-align:right;color:var(--jade)}
+  .gh-empty{font-size:13px;color:var(--muted);margin-top:20px}
+  .newsbar{height:64px;flex:none;display:flex;align-items:center;padding:0 18px;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);text-align:left}
+  .newsbar:hover{background:#fff}
+  .newsbar .nt{flex:1;font-size:17px;line-height:25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:16px}
+  .newsbar .ns,.newsbar .nm{font-size:13.5px;color:var(--muted);margin-left:14px;white-space:nowrap}
+  .newsbar .nm{color:var(--jade);padding-left:12px;border-left:1px solid var(--line)}
+
+  /* ---------- sheets ---------- */
+  .sheet-wrap{position:absolute;top:0;left:0;right:0;bottom:0;z-index:60;pointer-events:none}
+  .sheet-wrap.open{pointer-events:auto}
+  .scrim{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(16,22,18,.46);opacity:0;transition:opacity .22s}
+  .sheet-wrap.open .scrim{opacity:1}
+  .sheet{position:absolute;left:0;right:0;bottom:0;max-height:1420px;background:var(--card);border-radius:26px 26px 0 0;
+    box-shadow:0 -14px 44px rgba(0,0,0,.22);transform:translateY(102%);
+    transition:transform .24s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;overflow:hidden}
+  .sheet-wrap.open .sheet{transform:translateY(0)}
+  @keyframes softIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sheet-wrap.open .sheet-hd,.sheet-wrap.open .sheet-bd,.sheet-wrap.open .sheet-ft{animation:softIn .24s ease both}
+  @keyframes nfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  #newsList2.nfade{animation:nfade .18s ease both}
+  .toast{position:absolute;left:50%;bottom:92px;transform:translate(-50%,8px);background:rgba(24,30,26,.9);color:#fff;font-size:11px;padding:7px 14px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:80}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .sheet-wrap.from-top .sheet{top:0;bottom:auto;border-radius:0 0 26px 26px;transform:translateY(-102%);box-shadow:0 14px 44px rgba(0,0,0,.22)}
+  .sheet-wrap.from-top.open .sheet{transform:translateY(0)}
+  .sheet-hd{padding:18px 28px 12px;border-bottom:1px solid var(--line2);display:flex;align-items:flex-start;gap:12px}
+  .sheet-hd .big{font-size:26px;font-weight:800;line-height:1.15}
+  .sheet-hd .sub{font-size:10.5px;color:var(--muted);margin-top:4px}
+  .sheet-hd .close{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#F1EDE2;color:var(--ink2);font-size:17px;display:grid;place-items:center}
+  .sheet-bd{padding:14px 44px 22px 28px;overflow:auto}
+  #newsSheet .sheet-bd{min-height:0}
+  .sheet-bd::-webkit-scrollbar{width:0}
+  .sheet-ft{padding:8px 28px 12px;border-top:1px solid var(--line2);font-size:9px;color:var(--muted);display:flex;justify-content:space-between}
+
+  /* calendar sheet */
+  .cal2-top{display:flex;align-items:flex-end;margin-top:2px}
+  .cal2-top b + span,.cal2-top span + span{margin-left:10px}
+  .cal2-top b{font-size:24px;font-weight:800}
+  .cal2-top span{font-size:10px;color:var(--muted)}
+  .cal2-nav{margin-left:auto;display:flex}
+  .cal2-nav button + button{margin-left:5px}
+  .cal2-nav button{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:14px}
+  .cal2-week{display:grid;grid-template-columns:repeat(7,1fr);height:24px;align-items:center;font-size:9px;color:var(--muted);letter-spacing:.12em;text-align:center;margin-top:4px}
+  .cal2-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .c2{position:relative;height:60px;border:1px solid transparent;border-radius:8px;padding:4px 6px;text-align:left}
+  .c2:hover{background:var(--jade-l)}
+  .c2 .d{position:absolute;top:7px;left:9px;font-family:"Bahnschrift",sans-serif;font-size:22px;font-weight:600;line-height:26px}
+  .c2 .l{position:absolute;top:36px;left:10px;right:auto;font-size:13px;line-height:17px;color:var(--muted);white-space:nowrap}
+  .c2 .dots{position:absolute;left:9px;bottom:8px;display:flex}
+  .c2 .dots .pdot + .pdot{margin-left:4px}
+  .c2.today{border-color:var(--jade);background:rgba(42,95,78,.05)}
+  .c2.sel{background:var(--jade);border-color:var(--jade)}
+  .c2.sel .d,.c2.sel .l{color:#fff}
+  .c2.sel .pdot{background:rgba(255,255,255,.75)}
+  .c2.sel .pdot.p{background:#F3E9D6}
+  .c2.out{opacity:.32}
+  .pdot{width:5px;height:5px;border-radius:50%;background:#8FB3A0;display:block}
+  .pdot.p{background:var(--gold);box-shadow:0 0 0 2px rgba(168,124,69,.14)}
+  #wrapCal .sheet-hd .big{font-size:34px}
+  #wrapCal .sheet-hd .sub{font-size:15px}
+  #wrapCal .cal2-top b{font-size:34px}
+  #wrapCal .cal2-top span{font-size:15px}
+  #wrapCal .cal2-nav button{width:34px;height:34px;font-size:18px}
+  #wrapCal .cal2-week{height:32px;font-size:13px;margin-top:8px}
+  #wrapCal .cal2-grid{gap:6px}
+  #wrapCal .c2{height:92px;padding:6px 8px}
+  #wrapCal .c2 .d{top:8px;left:10px;font-size:26px}
+  #wrapCal .c2 .l{top:44px;left:10px;right:auto;font-size:14px;line-height:18px}
+  #wrapCal .c2 .dots{left:9px;bottom:9px}
+  #wrapCal .c2 .dots .pdot + .pdot{margin-left:5px}
+  #wrapCal .pdot{width:7px;height:7px}
+  #wrapCal .cal2-legend{font-size:14px;margin-top:14px}
+  #wrapCal .dd-h{margin-top:18px;margin-bottom:12px}
+  #wrapCal .dd-h b{font-size:30px}
+  #wrapCal .dd-h span{font-size:15px}
+  #wrapCal .hour{padding:16px 18px;margin-bottom:10px;font-size:16px;line-height:1.7}
+  #wrapCal .sheet-ft{font-size:12px;padding:10px 30px 14px}
+  #wrapCal .h-top .b{width:40px;height:40px;font-size:18px}
+  #wrapCal .h-top .t{font-size:19px}
+  #wrapCal .h-row{font-size:16px;line-height:1.8;margin-top:12px}
+  .cal2-legend{display:flex;font-size:14px;color:var(--muted);margin-top:12px;align-items:center}
+  .cal2-legend span + span{margin-left:22px}
+  .cal2-legend i{display:inline-block;margin-right:7px;vertical-align:0}
+
+  .day-detail{margin-top:10px;border-top:1px solid var(--line2);padding-top:10px}
+  .dd-h{display:flex;align-items:baseline;margin-bottom:12px}
+  .dd-h span{margin-left:14px}
+  .dd-h b{font-size:30px;font-weight:800}
+  .dd-h span{font-size:15px;color:var(--muted)}
+  .hour{border:1px solid var(--line);border-radius:14px;padding:18px 20px 16px;margin-bottom:12px;background:#fff}
+  .hour.pri{border-color:#E3CFA6;background:linear-gradient(180deg,#FFFDF7,#FBF5E8)}
+  .h-top{display:flex;align-items:center;flex-wrap:wrap;padding-bottom:4px}
+  .h-top > * + *{margin-left:17px}
+  .h-top .b{width:40px;height:40px;border-radius:10px;background:var(--jade);color:#fff;font-size:18px;font-weight:700;display:grid;place-items:center;flex:none}
+  .hour.pri .h-top .b{background:var(--gold)}
+  .h-top .t{font-size:19px;font-weight:700;font-family:"Bahnschrift",sans-serif;letter-spacing:.2px}
+  .h-top .gz{font-size:14px;color:var(--muted);padding-left:16px;border-left:1px solid var(--line2)}
+  .h-top .k{font-size:12px;line-height:22px;border-radius:5px;padding:0 9px;background:var(--jade-l);color:var(--jade-d);margin-left:17px}
+  .h-top .k.bad{background:var(--red-l);color:var(--red)}
+  .h-top .star{margin-left:auto;font-size:12px;color:var(--gold-d);background:var(--gold-l);border-radius:999px;padding:3px 10px}
+  .h-row{display:flex;align-items:flex-start;margin-top:12px;font-size:16px;line-height:1.8;color:var(--ink2)}
+  .h-row + .h-row{border-top:1px dashed var(--line2);padding-top:10px;margin-top:10px}
+  .h-row em{font-style:normal;width:24px;height:24px;border-radius:6px;background:var(--jade);color:#fff;font-size:12px;display:grid;place-items:center;margin-top:3px;margin-right:17px;flex:none}
+  .h-row.ji em{background:var(--red)}
+  .h-row span{flex:1;min-width:0}
+  .empty-sheet{padding:18px 20px;text-align:center;background:var(--red-l);border-radius:12px;margin:8px 0}
+  .empty-sheet .e1{font-size:26px;font-weight:800;color:var(--red);letter-spacing:.12em}
+  .empty-sheet .e2{font-size:11.5px;color:var(--ink2);margin-top:6px;line-height:1.7}
+
+  /* guide sheet */
+  #wrapGuide .sheet-hd{padding:22px 30px 16px}
+  #wrapGuide .sheet-hd .big{font-size:32px}
+  #wrapGuide .sheet-hd .sub{font-size:16px;margin-top:8px}
+  #wrapGuide .sheet-hd .close{width:40px;height:40px;font-size:20px}
+  #wrapGuide .sheet-bd{padding:18px 34px 26px 30px}
+  #wrapGuide .sheet-ft{font-size:12px;padding:10px 30px 14px}
+  #wrapGuide .gd-brief{font-size:20px;line-height:1.8;font-weight:600;margin:0 0 16px}
+  #wrapGuide .gd-sub{font-size:15px;letter-spacing:.16em;margin:24px 0 10px}
+  #wrapGuide .gd-five{font-size:18px}
+  #wrapGuide .gd-five th{font-size:13px}
+  #wrapGuide .gd-five th,#wrapGuide .gd-five td{padding:10px 12px}
+  #wrapGuide .gd-hours{gap:10px}
+  #wrapGuide .gd-hour{font-size:16px;line-height:1.65;padding:12px 14px}
+  #wrapGuide .gd-warn{font-size:17px;line-height:1.7}
+  #wrapGuide .gd-warn li{margin-bottom:8px;padding-left:16px}
+  #wrapGuide .pending-yiji > div{font-size:15px;line-height:24px;padding:9px 0}
+  .gd-hex{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px;margin:2px 0 16px}
+  .gd-hex div{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
+  .gd-hex span{display:block;font-size:12px;color:var(--muted);letter-spacing:.1em}
+  .gd-hex b{display:block;font-size:22px;margin-top:4px}
+  .gd-todo{border-top:1px solid var(--line2)}
+  .gd-todo > div{display:grid;grid-template-columns:70px 1fr;gap:14px;padding:10px 0;border-bottom:1px dotted var(--line2);font-size:17px;line-height:1.6}
+  .gd-todo b{color:var(--jade-d)}
+  .gd-one{margin-top:14px;font-size:17px;line-height:1.7;background:var(--jade-l);border-left:3px solid var(--jade);padding:10px 14px;border-radius:0 8px 8px 0}
+  .gd-one b{color:var(--jade-d);margin-right:8px}
+  .gd-window{margin-top:10px;font-size:16px;line-height:1.6;background:var(--gold-l);color:var(--gold-d);padding:10px 14px;border-radius:8px}
+  .gd-src{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.6}
+  .gd-sub{font-size:10px;letter-spacing:.18em;color:var(--muted);font-weight:700;margin:12px 0 6px}
+  .gd-five{width:100%;border-collapse:collapse;font-size:11.5px}
+  .gd-five th,.gd-five td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:left;vertical-align:top}
+  .gd-five th{font-size:9px;color:var(--muted);font-weight:700}
+  .gd-five td b{font-weight:700}
+  .gd-five .neg{color:var(--red)} .gd-five .pos{color:var(--jade)} .gd-five .mid{color:#8E8776}
+  .gd-hours{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .gd-hour{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:10.5px;background:#fff}
+  .gd-hour b{color:var(--jade-d)}
+  .gd-warn{margin:0;padding:0;list-style:none;font-size:11.5px}
+  .gd-warn li{padding-left:12px;position:relative;margin-bottom:4px;color:var(--ink2)}
+  .gd-warn li::before{content:"";position:absolute;left:0;top:.6em;width:4px;height:4px;background:var(--red);border-radius:1px;transform:rotate(45deg)}
+
+  /* memo sheet */
+  .ms-group{font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;margin:10px 0 4px}
+  .ms-item{display:flex;align-items:center;gap:9px;height:40px;padding-right:18px;border-bottom:1px solid var(--line2);font-size:12px}
+  .ms-item .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ms-item .time{margin-left:auto;flex:none;font-size:9px;color:var(--muted)}
+  .ms-item.done .t{color:var(--muted);text-decoration:line-through}
+  .ms-item .cb{width:15px;height:15px;font-size:8px}
+  .ms-item.done .cb{background:var(--jade);border-color:var(--jade)}
+  .memo-history{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px;margin-bottom:22px;padding:16px 20px;border:1px solid var(--line);border-radius:10px}
+  .hstats,.hlegend{color:var(--muted);font-size:12px}
+  .hstats b{color:var(--jade-d);font-size:18px;margin-right:6px}
+  .hstats span + span{margin-left:20px}
+  .bars{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:96px;align-items:end;margin-top:10px}
+  .barcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:11px;color:var(--muted)}
+  .barcol u{width:100%;max-width:32px;background:#CFE0D2;border-radius:4px 4px 0 0}
+  .barcol.today u{background:var(--jade)}
+  .heat{display:grid;grid-template-columns:repeat(7,30px);gap:3px;margin-top:8px}
+  .hc{height:27px;border-radius:3px;background:#EFEADD;font-size:11px;color:var(--muted);display:grid;place-items:center}
+  .hc.l1{background:#DCE8DC}.hc.l2{background:#B7CFB9}.hc.l3{background:#7FA78B;color:var(--ink)}
+  .hc.today{box-shadow:inset 0 0 0 1.5px var(--jade)}
+  .recent{grid-column:span 2;color:var(--muted);font-size:12px}
+  .recent b{color:var(--ink2);font-weight:500}
+
+  /* news sheet */
+  .ntabs{display:flex;margin:2px 0 6px}
+  .ntabs button + button{margin-left:5px}
+  .ntabs button{font-size:13px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);color:var(--ink2);background:#fff}
+  .ntabs button.on{background:var(--jade);color:#fff;border-color:var(--jade)}
+  .nrow2{display:flex;align-items:flex-start;padding:13px 2px;border-bottom:1px solid var(--line2)}
+  .nrow2 .body{margin-left:12px}
+  .nrow2 .idx{font-family:"Bahnschrift",sans-serif;font-size:11px;color:#BDB5A3;width:22px;flex:none;margin-top:3px}
+  .nrow2 .body{flex:1;min-width:0}
+  .nrow2 .tt{font-size:16px;line-height:1.55;color:var(--ink)}
+  .nrow2 .meta{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:4px}
+  .nrow2.read .tt{color:#9A9A90}
+  .nrow2 .readtag{font-size:8px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:5px}
+  .nrow2 .why{font-size:12px;line-height:1.55;color:var(--gold-d);margin-top:4px}
+  .nfoot{display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);margin-top:10px}
+
+  /* annotations */
+  .anno-layer{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:30;pointer-events:none}
+  .annot .anno-layer{display:block}
+  .annot .artboard::before{content:"";position:absolute;inset:0;background:rgba(242,239,230,.5);z-index:24}
+  .annot .artboard::after{content:"";position:absolute;inset:32px 40px 36px;border:1px dashed rgba(42,95,78,.3);z-index:31;border-radius:4px}
+  .zt{position:absolute;left:40px;right:40px;border:1px dashed rgba(42,95,78,.6);border-radius:10px}
+  .zt-h{position:absolute;top:-11px;left:12px;display:flex;align-items:center;gap:8px;background:#F7F4EA;
+    border:1px solid rgba(42,95,78,.55);border-radius:5px;padding:2px 8px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .zt-h b{font-size:10px;color:var(--jade-d);letter-spacing:.02em}
+  .zt-h span{font-size:8.5px;color:var(--muted)}
+
+  /* toolbar */
+  .toolbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100;display:flex;align-items:center;gap:5px;
+    padding:6px 7px;border-radius:999px;background:rgba(24,30,26,.84);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .toolbar button{font-size:11px;color:#DDE4DD;padding:5px 11px;border-radius:999px}
+  .toolbar button:hover{background:rgba(255,255,255,.1)}
+  .toolbar button.on{background:#EDE8DB;color:#1A211C}
+  .toolbar .tl{font-size:9.5px;color:#8E9A90;padding:0 7px;letter-spacing:.05em}
+  body.canvas .toolbar{display:none}
+  @media print{.toolbar{display:none}}
+</style>
+</head>
+<body>
+<button id="collapseDot" class="collapse-dot" title="收起面板" aria-label="收起面板"></button>
+<div class="stage">
+  <div class="wrap" id="wrap">
+    <div class="artboard" id="art">
+
+      <header class="top">
+        <div class="top-l">
+          <div class="time"><span id="hhmm"></span><span class="sec" id="ss"></span></div>
+          <div class="dateline" id="dateline"></div>
+        </div>
+        <div class="top-r">
+          <div class="calbar">
+            <b id="calM"></b>
+            <button class="more" id="openCal">全月 ↗</button>
+          </div>
+          <div class="three-days" id="threeDays" aria-label="昨天、今天和明天"></div>
+        </div>
+      </header>
+
+      <div class="row2">
+        <section class="card guide" id="guideCard">
+          <div class="sec-top">
+            <span class="label">今日指南</span>
+            <span class="grow"></span>
+            <button class="iconbtn" id="refreshGuide" title="重新读取面板缓存" aria-label="重新读取面板缓存">↻</button>
+            <button class="more" id="openGuide">详情 ↗</button>
+          </div>
+          <div class="lunar" id="lunar"><strong id="lunarDay"></strong><small id="lunarMeta"></small></div>
+          <div class="guide-meta" id="gDate" aria-live="polite"></div>
+          <div class="guide-content" id="guideContent">
+            <div class="hero">
+              <div class="g-score">
+                <div class="grade"></div>
+                <div class="score"><b id="gScore"></b><span>/ 10</span></div>
+              </div>
+              <div class="g-main">
+                <div class="hex">
+                  <div><b></b><i>→</i><b></b><em></em></div>
+                  <div class="n"></div>
+                </div>
+                <div class="g-quote">
+                  <div class="g-quote-line"><span id="oneText"></span><em id="oneSource"></em></div>
+                  <small id="oneNote"></small>
+                </div>
+              </div>
+            </div>
+            <div class="yiji-wrap">
+              <div class="yiji">
+                <div><span class="b-yi">宜</span><span id="gYi"></span></div>
+                <div><span class="b-ji">忌</span><span id="gJi"></span></div>
+              </div>
+              <button class="five-btn" id="fiveBtn" aria-controls="fivePop" aria-expanded="false"></button>
+              <div class="five-pop" id="fivePop"></div>
+            </div>
+            <div class="todo" id="gTodo">
+              <div class="todo-h" id="todoLabel"></div>
+              <div class="todo-cols">
+                <div class="todo-col" id="todoLeft"></div>
+                <div class="todo-col todo-col-r" id="todoRight"></div>
+              </div>
+            </div>
+            <div class="wbadge"></div>
+          </div>
+          <div class="guide-pending" id="guidePending" hidden>
+            <div class="gp-head">
+              <span class="gp-stamp">未推算</span>
+              <div class="gp-copy"><b>今日指南尚未出稿</b><span id="gpSubtitle">等待导入今日指南</span></div>
+            </div>
+            <div class="gp-sub">农 历 宜 忌</div>
+            <div class="gp-row"><span class="b-yi">宜</span><span id="gpYi"></span></div>
+            <div class="gp-row"><span class="b-ji">忌</span><span id="gpJi"></span></div>
+            <div class="gp-note" id="gpNote">指南出稿后自动更新。</div>
+          </div>
+        </section>
+        <section class="card memo">
+          <div class="sec-top">
+            <span class="label">备忘录</span><span class="cnt" id="memoCount"></span>
+            <span class="grow"></span>
+            <button class="done-btn" id="doneBtn">已完成 <b id="doneN"></b></button>
+          </div>
+          <div class="memo-list" id="memoList"></div>
+          <button class="memo-expand" id="memoExpand" hidden>展开全部 ⌄</button>
+          <div class="memo-add" id="memoAdd"><button type="button">＋ 添加一条</button></div>
+        </section>
+      </div>
+
+      <section class="card quotes" id="quoteCard">
+        <div class="sec-top"><span class="label">经典</span></div>
+        <div class="q-body">
+          <div class="q-left">
+            <blockquote id="qText"></blockquote>
+            <div class="q-src"><span id="qSource"></span> · <span id="qRef"></span></div>
+          </div>
+          <div class="q-right">
+            <div class="q-note-label">今 日 批 注</div>
+            <div class="q-note-body"><p class="q-analysis" id="qAnalysis"></p></div>
+            <div class="usage"><b>今日用法</b><span id="qUsage"></span></div>
+          </div>
+        </div>
+        <div class="q-dots" id="qDots" role="group" aria-label="切换经典条目"></div>
+      </section>
+
+      <div class="row45">
+        <section class="card sky">
+          <div class="sec-top"><span class="label">天时</span><span class="grow"></span><span id="weatherPlace" class="muted"></span></div>
+          <div class="sky-hero">
+            <span class="temp">—</span><span class="cond">等待天气更新</span><span class="smeta"></span>
+          </div>
+          <div class="sunrow"></div>
+          <svg class="spark" id="weatherSpark" viewBox="0 0 360 64" preserveAspectRatio="none"></svg>
+          <div class="fc" hidden></div>
+        </section>
+
+        <section class="card github">
+          <div class="sec-top">
+            <span class="label">GitHub 今日热点</span><span class="grow"></span>
+            <span id="githubDate" class="muted"></span>
+            <a class="more" href="https://github.com/trending?since=daily" target="_blank" rel="noopener">更多 ↗</a>
+          </div>
+          <div id="githubList" class="gh-list"></div>
+        </section>
+      </div>
+
+      <button class="newsbar" id="openNews">
+        <span class="label">资讯</span><span class="nt" id="newsBarTitle"></span>
+        <span class="ns" id="newsBarSrc"></span><span class="nm">全部 ↑</span>
+      </button>
+
+      <div class="anno-layer" aria-hidden="true">
+        <div class="zt" style="top:var(--board-inset);height:176px"><div class="zt-h"><b>① 顶栏与三日历 · 176</b><span>点日期 / 全月打开月历</span></div></div>
+        <div class="zt" style="top:calc(var(--board-inset) + 204px);height:700px"><div class="zt-h"><b>② 指南 540 | 备忘 440 · 700</b><span>today.json / memo.json</span></div></div>
+        <div class="zt" style="top:calc(var(--board-inset) + 932px);height:356px"><div class="zt-h"><b>③ 经典 · 356</b><span>quotes.json</span></div></div>
+        <div class="zt" style="top:calc(var(--board-inset) + 1316px);height:400px;right:auto;width:420px"><div class="zt-h"><b>④ 天时 · 420 × 400</b><span>weather.json</span></div></div>
+        <div class="zt" style="top:calc(var(--board-inset) + 1316px);height:400px;left:480px;right:auto;width:560px"><div class="zt-h"><b>⑤ GitHub 今日热点 · 560 × 400</b><span>github_trending.json</span></div></div>
+        <div class="zt" style="top:calc(var(--board-inset) + 1744px);height:64px"><div class="zt-h"><b>⑥ 资讯条 · 64</b><span>news.json</span></div></div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+      <!-- sheets -->
+      <div class="sheet-wrap from-top" id="wrapCal">
+        <div class="scrim" data-close></div>
+        <div class="sheet" style="max-height:1840px">
+          <div class="sheet-hd">
+            <div><div class="big">祈福求财月历</div><div class="sub">选中日期查看农历与时辰</div></div>
+            <button class="close" data-close>×</button>
+          </div>
+          <div class="sheet-bd">
+            <div class="cal2-top">
+              <b id="cal2Month">十一月</b><span id="cal2Year">2026 · 丙午</span><span id="cal2Stat">本月 23 天 · 48 时辰</span>
+              <div class="cal2-nav"><button id="cal2Prev">‹</button><button id="cal2This">今</button><button id="cal2Next">›</button></div>
+            </div>
+            <div class="cal2-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+            <div class="cal2-grid" id="cal2Grid"></div>
+            <div class="cal2-legend"><span><i class="pdot" style="display:inline-block"></i>可用时辰</span><span><i class="pdot p" style="display:inline-block"></i>宜祈福 + 求财</span><span>点日期看时辰</span></div>
+            <div class="day-detail" id="cal2Detail"></div>
+          </div>
+          <div class="sheet-ft"><span>农历及宜忌由本地历法提供</span><span>点遮罩或 Esc 关闭</span></div>
+        </div>
+      </div>
+
+      <div class="sheet-wrap" id="wrapGuide">
+        <div class="scrim" data-close></div>
+        <div class="sheet" style="max-height:1840px">
+          <div class="sheet-hd">
+            <div><div class="big">今日指南 · 11-21 周六</div><div class="sub">平 4.4 / 10 · 水风井 → 水天需 · 初六动</div></div>
+            <button class="close" data-close>×</button>
+          </div>
+          <div class="sheet-bd" id="gdBody"></div>
+          <div class="sheet-ft"><span>来源：历史存档 / 每日指南 / 2026-11-21</span><span>面板只读，不重算</span></div>
+        </div>
+      </div>
+
+      <div class="sheet-wrap" id="wrapMemo">
+        <div class="scrim" data-close></div>
+        <div class="sheet" style="max-height:1250px">
+          <div class="sheet-hd">
+            <div><div class="big" id="memoTitle">备忘 · 全部</div><div class="sub" id="memoSub">待办 8 · 已完成 6</div></div>
+            <button class="close" data-close>×</button>
+          </div>
+          <div class="sheet-bd">
+            <div class="memo-history" id="memoHistory" hidden>
+              <div>
+                <div class="hstats"><span><b>0</b>本周完成</span><span><b>0</b>连续天数</span></div>
+                <div class="bars" id="bars"></div>
+              </div>
+              <div><div class="hlegend" id="historyMonth"></div><div class="heat" id="heat"></div></div>
+              <div class="recent"></div>
+            </div>
+            <div id="memoAll"></div>
+          </div>
+          <div class="sheet-ft"><span>完成的不会删，按天留在行事历</span><span>data/memo.json</span></div>
+        </div>
+      </div>
+
+      <div class="sheet-wrap" id="wrapNews">
+        <div class="scrim" data-close></div>
+        <div class="sheet" id="newsSheet" style="max-height:1300px">
+          <div class="sheet-hd">
+            <div><div class="big">资讯 · 为你挑的</div><div class="sub">跑完新闻脚本后点 ↻ · 点过的会记住</div></div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+              <button class="iconbtn" id="refreshNews" title="手动跑完新闻后点这里">↻</button>
+              <button class="close" data-close style="margin-left:0">×</button>
+            </div>
+          </div>
+          <div class="sheet-bd">
+            <div class="ntabs" id="newsTabs"><button class="on" data-cat="all">全部</button><button data-cat="tech">科技</button><button data-cat="design">设计</button><button data-cat="finance">金融</button></div>
+            <div id="newsList2"></div>
+            <div class="nfoot"><span id="newsFoot">今天点开 2 条</span><span>排序依据：你最近点过的来源与关键词</span></div>
+          </div>
+          <div class="sheet-ft"><span>只存标题 / 链接 / 来源 / 时间，不存正文和图片</span><span>data/cache/news.json · clicks.json</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <span class="tl">1080 × 1920 · 9:16 · 示意 11-21 23:52</span>
+  <button id="btnFit" class="on">适应</button>
+  <button id="btnActual">1:1</button>
+  <button id="btnAnno">标注</button>
+  <button id="btnCal">月历</button>
+  <button id="btnNews">资讯</button>
+</div>
+
+<script src="plan-data.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>

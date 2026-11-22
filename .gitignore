@@ -1,0 +1,14 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+config.json
+data/
+*.log
+.DS_Store
+Thumbs.db
+*.lnk
+release/
+/design/plan-data.js
+/design/规划图_月历.png
+/design/规划图_启动按钮.png

@@ -1,0 +1,14 @@
+{
+  "screen": "auto",
+  "window": {
+    "width": 1080,
+    "height": null,
+    "x": 0,
+    "y": 0
+  },
+  "weather": {
+    "name": "北京",
+    "lat": 39.9042,
+    "lon": 116.4074
+  }
+}

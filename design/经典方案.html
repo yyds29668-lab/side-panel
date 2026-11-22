@@ -1,0 +1,105 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<style>
+  :root{--paper:#F2EFE6;--card:#FCFAF4;--ink:#1A211C;--ink2:#3D453D;--muted:#5E685E;--jade:#2A5F4E;--jade-d:#204A3D;--jade-l:#E8EFE8;--gold:#A87C45;--gold-d:#7E5A2C;--gold-l:#F5EBD9;--line:#DED8C8;--line2:#EAE5D8;--red:#A64B42}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);font-family:"Segoe UI","Microsoft YaHei",sans-serif;color:var(--ink);padding:24px 40px 34px}
+  .head{display:flex;align-items:baseline;margin-bottom:16px}
+  .head h1{font-size:20px;margin:0;font-weight:600}
+  .head span{font-size:12px;color:var(--muted);margin-left:12px}
+  .card{width:1000px;height:356px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 28px;position:relative;margin-bottom:22px;box-shadow:0 8px 24px rgba(35,40,32,.06);overflow:hidden}
+  .tag{font-size:11px;line-height:18px;color:var(--muted);letter-spacing:.08em}
+  .tag b{color:var(--jade-d);font-weight:600}
+  .seal{position:absolute;right:28px;top:22px;width:36px;height:36px;border:1px solid var(--gold);border-radius:6px;color:var(--gold-d);font:600 11px/1.15 "Songti SC","STSong","SimSun",serif;display:grid;place-items:center;text-align:center;background:var(--gold-l)}
+  .source{font-size:13px;color:var(--muted)}
+  .ana{font-size:15px;line-height:25px;color:var(--ink2)}
+  .use{font-size:14px;line-height:23px;color:var(--ink2);background:var(--jade-l);border-left:3px solid var(--jade);padding:9px 12px;border-radius:0 8px 8px 0}
+  .use b{color:var(--jade-d);margin-right:8px}
+  .dots{display:flex;align-items:center;justify-content:center;height:24px;margin-top:14px}
+  .dot{width:24px;height:24px;display:grid;place-items:center}
+  .dot::after{content:"";width:4px;height:4px;border-radius:50%;background:#A9AD9F}
+  .dot.on::after{width:7px;height:7px;background:var(--jade)}
+  .dot:nth-child(6)::after{background:var(--gold)}
+  /* A */
+  .a .top{display:flex;align-items:baseline;justify-content:space-between}
+  .a .body{display:grid;grid-template-columns:58% 42%;margin-top:22px;height:220px}
+  .a .left{padding-right:30px;display:flex;flex-direction:column;justify-content:center}
+  .a blockquote{margin:0;font:400 40px/1.35 "Songti SC","STSong","SimSun",serif;letter-spacing:.01em}
+  .a .source{margin-top:12px}
+  .a .right{border-left:1px solid var(--line2);padding-left:28px;display:flex;flex-direction:column;justify-content:center}
+  .a .ana{margin:0}
+  .a .use{margin-top:14px}
+  .a .dots{position:absolute;left:28px;right:28px;bottom:18px;margin:0;justify-content:flex-start}
+  /* B */
+  .b{padding:26px 30px}
+  .b .frame{position:absolute;left:12px;right:12px;top:12px;bottom:12px;border:1px solid var(--line);border-radius:12px;pointer-events:none}
+  .b .top{position:relative;display:flex;justify-content:space-between;align-items:center;padding:0 8px}
+  .b .quote{position:relative;text-align:center;margin-top:24px}
+  .b blockquote{margin:0;font:400 46px/1.35 "Songti SC","STSong","SimSun",serif;letter-spacing:.02em}
+  .b .source{margin-top:8px;text-align:center;font-size:12px}
+  .b .bottom{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:28px;margin:20px 28px 0}
+  .b .bottom .ana{font-size:14px;line-height:24px;margin:0}
+  .b .use{font-size:13px;line-height:22px;padding:8px 11px}
+  .b .dots{position:absolute;left:0;right:0;bottom:12px;margin:0;justify-content:center}
+  /* C */
+  .c .top{display:flex;align-items:baseline;justify-content:space-between}
+  .c .body{display:grid;grid-template-columns:58% 42%;margin-top:24px;height:214px}
+  .c .left{padding-right:28px;display:flex;flex-direction:column;justify-content:center;border-left:4px solid var(--gold);padding-left:24px}
+  .c blockquote{margin:0;font:400 38px/1.45 "Songti SC","STSong","SimSun",serif}
+  .c .source{margin-top:12px}
+  .c .note{background:#F8F3E7;border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;justify-content:center}
+  .c .note .tag{margin-bottom:8px}
+  .c .note .ana{font-size:14px;line-height:24px}
+  .c .note .use{margin-top:10px;background:transparent;border-left:0;padding:0;font-size:13px;line-height:22px}
+  .c .note .use b{display:block;margin-bottom:2px}
+  .c .dots{position:absolute;left:28px;right:28px;bottom:16px;margin:0;justify-content:flex-end}
+  /* D */
+  .d{padding:0;display:grid;grid-template-columns:42% 58%}
+  .d .left{background:var(--jade-l);padding:28px 30px;position:relative}
+  .d .left .tag{color:var(--jade-d)}
+  .d .left blockquote{margin:40px 0 0;font:400 34px/1.5 "Songti SC","STSong","SimSun",serif;color:var(--jade-d)}
+  .d .left .source{position:absolute;left:30px;bottom:28px;font-size:12px;color:var(--jade-d);opacity:.8}
+  .d .right{padding:28px 30px;display:flex;flex-direction:column;justify-content:center;position:relative}
+  .d .right .tag{margin-bottom:10px}
+  .d .right .ana{font-size:15px;line-height:26px}
+  .d .right .use{margin-top:14px;background:var(--gold-l);border-left-color:var(--gold)}
+  .d .dots{position:absolute;left:30px;right:30px;bottom:16px;margin:0;justify-content:flex-start}
+</style></head><body>
+<div class="head"><h1>经典卡 · 四个方向</h1><span>1000 × 356 / 同一句、同一组解析</span></div>
+
+<section class="card a">
+  <div class="top"><span class="tag"><b>经典</b> · 每日一句</span><span class="tag">《道德经》· 第四十章</span></div>
+  <div class="body">
+    <div class="left"><blockquote>「反者道之动，<br>弱者道之用。」</blockquote><div class="source">《道德经》· 第四十章</div></div>
+    <div class="right"><p class="ana">事情走到极端会转向反面；柔弱不是软弱，而是不硬碰硬的力量。</p><div class="use"><b>今日用法</b>今天遇到顶牛的事，先退半步，换一种方式再试。</div></div>
+  </div>
+  <div class="dots"></div>
+</section>
+
+<section class="card b">
+  <div class="frame"></div>
+  <div class="top"><span class="tag"><b>经典</b> · 碑帖</span><span class="tag">静读 · 第四十章</span></div>
+  <div class="quote"><blockquote>「反者道之动，弱者道之用。」</blockquote><div class="source">《道德经》· 第四十章</div></div>
+  <div class="bottom"><p class="ana">事情走到极端会转向反面；柔弱不是软弱，而是不硬碰硬的力量。</p><div class="use"><b>今日用法</b>今天遇到顶牛的事，先退半步，换一种方式再试。</div></div>
+  <div class="dots"></div>
+</section>
+
+<section class="card c">
+  <div class="top"><span class="tag"><b>经典</b> · 批注</span><span class="tag">《道德经》· 第四十章</span></div>
+  <div class="body">
+    <div class="left"><blockquote>「反者道之动，<br>弱者道之用。」</blockquote><div class="source">《道德经》· 第四十章</div></div>
+    <div class="note"><div class="tag">今 日 批 注</div><p class="ana">事情走到极端会转向反面；柔弱不是软弱，而是不硬碰硬的力量。</p><div class="use"><b>今日用法</b>今天遇到顶牛的事，先退半步，换一种方式再试。</div></div>
+  </div>
+  <div class="dots"></div>
+</section>
+
+<section class="card d">
+  <div class="left"><span class="tag">今 日 一 句 · 第 四 十 章</span><blockquote>「反者道之动，<br>弱者道之用。」</blockquote><div class="source">《道德经》</div></div>
+  <div class="right"><div class="tag">经 典 · 今 日 用 法</div><p class="ana">事情走到极端会转向反面；柔弱不是软弱，而是不硬碰硬的力量。</p><div class="use"><b>今日用法</b>今天遇到顶牛的事，先退半步，换一种方式再试。</div><div class="dots"></div></div>
+</section>
+
+<script>
+  document.querySelectorAll('.dots').forEach(function(el){
+    for(var i=0;i<36;i++){var d=document.createElement('i');d.className='dot'+(i===5?' on':'');el.appendChild(d);}
+  });
+</script>
+</body></html>
