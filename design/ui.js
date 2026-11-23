@@ -256,13 +256,8 @@
     if (!g || g.date !== TODAY){
       var y = lunarYiji();
       hd.querySelector('.big').textContent = '今日指南 · ' + TODAY.slice(5);
-      hd.querySelector('.sub').textContent = y.available ? '未推算 · 农历宜忌' : '未推算 · 暂无历法数据';
-      var html = '<p class="gd-brief">今日指南尚未出稿，导入后自动更新。</p>';
-      if (!y.available){
-        $('gdBody').innerHTML = html;
-        ft.textContent = '未推算 · 等待今日指南';
-        return;
-      }
+      hd.querySelector('.sub').textContent = '未推算 · 仅农历宜忌';
+      var html = '<p class="gd-brief">未推算。今日只显示农历宜忌，指南出稿后自动更新。</p>';
       html += '<div class="gd-sub">农 历 宜 忌</div><div class="gd-todo pending-yiji">';
       html += '<div><b>宜</b><span>' + (y.yi.length ? esc(y.yi.join(' · ')) : '今日不朝') + '</span></div>';
       html += '<div><b>忌</b><span>' + (y.ji.length ? esc(y.ji.join(' · ')) : '—') + '</span></div>';
@@ -277,6 +272,24 @@
       '<div><span>之 卦</span><b>' + esc(g.hexagram.changed) + '</b></div>' +
       '<div><span>判 · 动 爻</span><b>' + esc(g.grade) + ' ' + esc(g.score) + ' · ' + esc(g.hexagram.moving) + '</b></div></div>';
     html += '<p class="gd-brief">' + esc(g.summary) + '</p>';
+
+    if (g.almanac){
+      var am = g.almanac;
+      html += '<div class="gd-sub">农 历 宜 忌</div><div class="gd-am-yiji">';
+      html += '<div><span class="b-yi">宜</span><span>' + (am.yi && am.yi.length ? esc(am.yi.join(' · ')) : '—') + '</span></div>';
+      html += '<div><span class="b-ji">忌</span><span>' + (am.ji && am.ji.length ? esc(am.ji.join(' · ')) : '—') + '</span></div></div>';
+      var items = [['五行', am.wuxing], ['冲煞', am.chong], ['值神', am.zhishen], ['建除十二神', am.jianchu], ['吉神宜趋', (am.jishen || []).join(' · ')], ['胎神', am.taishen], ['凶神宜忌', (am.xiongsha || []).join(' · ')], ['二十八星宿', am.ershiba], ['彭祖百忌', am.pengzu]];
+      html += '<div class="gd-am-grid">';
+      items.forEach(function(x){ if (x[1]) html += '<div class="gd-am-item"><div class="k">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>'; });
+      html += '</div>';
+      if (am.hours && am.hours.length){
+        html += '<div class="gd-sub">十 二 时 辰</div><div class="gd-am-hours">';
+        am.hours.forEach(function(h){
+          html += '<div class="gd-am-hour"><b>' + esc(h.branch) + '时</b><em>' + esc(h.stem || '') + '</em><span class="j ' + (h.luck === '吉' ? 'good' : 'bad') + '">' + esc(h.luck || '') + '</span></div>';
+        });
+        html += '</div>';
+      }
+    }
 
     var todos = guideTodos(g);
     if (todos.length){
@@ -753,6 +766,8 @@
     NOW = new Date();
     $('hhmm').textContent = pad(NOW.getHours()) + ':' + pad(NOW.getMinutes());
     $('ss').textContent = pad(NOW.getSeconds());
+    renderDirs();
+    syncClassicClock();
     var key = dateKey(NOW);
     if (key !== TODAY){
       TODAY = key;
@@ -793,7 +808,7 @@
       });
     }
     if (v && v.s) v.s.forEach(function(s){ add(yi, s.y); add(ji, s.j); });
-    return { available: !!v, yi: yi.slice(0, 12), ji: ji.slice(0, 12), lunar: v ? v.l : '', day: v ? v.g : '' };
+    return { yi: yi.slice(0, 12), ji: ji.slice(0, 12), lunar: v ? v.l : '', day: v ? v.g : '' };
   }
 
   function renderPending(){
@@ -802,12 +817,50 @@
     $('guideContent').hidden = true;
     $('guidePending').hidden = false;
     $('gDate').textContent = TODAY.replace(/-/g, '.') + ' · 待出稿';
-    $('gpSubtitle').textContent = y.available ? '查看当天农历宜忌' : '暂无当天历法数据';
-    $('gpYi').textContent = y.yi.length ? y.yi.join(' · ') : (y.available ? '今日不朝' : '—');
+    $('gpYi').textContent = y.yi.length ? y.yi.join(' · ') : '今日不朝';
     $('gpJi').textContent = y.ji.length ? y.ji.join(' · ') : '—';
     $('gpNote').textContent = '指南出稿后自动更新。';
   }
 
+  var DIR_RANGE = {子:'23:00–00:59',丑:'01:00–02:59',寅:'03:00–04:59',卯:'05:00–06:59',辰:'07:00–08:59',巳:'09:00–10:59',午:'11:00–12:59',未:'13:00–14:59',申:'15:00–16:59',酉:'17:00–18:59',戌:'19:00–20:59',亥:'21:00–22:59'};
+  var lastDirBranch = '';
+  function currentBranch(d){
+    var h = d.getHours();
+    if (h === 23 || h === 0) return '子';
+    if (h <= 2) return '丑'; if (h <= 4) return '寅'; if (h <= 6) return '卯';
+    if (h <= 8) return '辰'; if (h <= 10) return '巳'; if (h <= 12) return '午';
+    if (h <= 14) return '未'; if (h <= 16) return '申'; if (h <= 18) return '酉';
+    if (h <= 20) return '戌'; return '亥';
+  }
+  function renderDirs(){
+    var g = TODAY_DATA, box = $('gDirs');
+    if (!g || !g.almanac || !Array.isArray(g.almanac.hours)){ box.hidden = true; return; }
+    var b = currentBranch(NOW), row = null;
+    for (var i = 0; i < g.almanac.hours.length; i++){ if (g.almanac.hours[i].branch === b){ row = g.almanac.hours[i]; break; } }
+    if (!row){ box.hidden = true; return; }
+    if (lastDirBranch === b && !box.hidden) return;
+    lastDirBranch = b;
+    box.hidden = false;
+    $('dirBranch').textContent = b + '时';
+    $('dirTime').textContent = DIR_RANGE[b] || row.time || '';
+    $('dirCai').textContent = row.cai || '—';
+    $('dirXi').textContent = row.xi || '—';
+    $('dirFu').textContent = row.fu || '—';
+  }
+  function classicSlotIndex(){
+    var m = NOW.getHours() * 60 + NOW.getMinutes();
+    if (m < 360) return QUOTES.length - 1;
+    var slot = Math.floor((m - 360) / 30);
+    return Math.min(slot, QUOTES.length - 1);
+  }
+  var classicSlot = -1;
+  function syncClassicClock(){
+    if (!QUOTES.length) return;
+    var s = classicSlotIndex();
+    if (s === classicSlot) return;
+    classicSlot = s; qi = s;
+    if (typeof renderQuote === 'function'){ renderQuote(); renderDots(); }
+  }
   function renderGuide(){
     var g = TODAY_DATA, card = $('guideCard');
     renderLunar(g);
@@ -860,6 +913,8 @@
     if (windowRow){
       wbadge.innerHTML = '<b>' + esc(windowRow.branch) + '时 ' + esc(windowRow.time) + '</b>' + (windowRow.note ? ' · ' + esc(windowRow.note) : '');
     }
+    lastDirBranch = '';
+    renderDirs();
   }
 
   window.applyPanelData = function(d){
@@ -887,11 +942,7 @@
     if (d.quotes && d.quotes.length){
       QUOTES = d.quotes; qi = Math.min(qi, QUOTES.length - 1); renderQuote(); renderDots();
     }
-    if (TODAY_DATA && TODAY_DATA.classic && TODAY_DATA.classic.text){
-      var c = TODAY_DATA.classic;
-      QUOTES[0] = {text:String(c.text).replace(/^「|」$/g, ''), src:c.src || '', ref:c.ref || '', a:c.analysis || TODAY_DATA.one_note || '', u:c.usage || ''};
-      qi = 0; renderQuote(); renderDots();
-    }
+    syncClassicClock();
     if (d.news && d.news.length){
       NEWS = d.news; renderNewsBar(); renderNewsSheet();
     }
@@ -919,7 +970,9 @@
 
   $('hhmm').textContent = pad(NOW.getHours()) + ':' + pad(NOW.getMinutes());
   $('ss').textContent = pad(NOW.getSeconds());
-  updateDates(); renderMemo(); renderGuide(); renderGuideSheet(); renderQuote(); renderDots();
+  updateDates(); renderMemo(); renderGuide(); renderGuideSheet();
+  qi = classicSlotIndex(); classicSlot = qi;
+  renderQuote(); renderDots();
   renderGithub(); renderNewsBar(); renderMemoSheet(); renderNewsSheet(); renderCalSheet();
 
   var sh = params.get('sheet');

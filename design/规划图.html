@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>侧屏面板 · 规划图 · 1080×1920</title>
-<!-- 设计稿可直接打开。plan-data.js 为可选的本地历法数据。
+<!-- 设计稿（2026-11-22 改版）：需要同目录 plan-data.js，双击即可打开，不需要服务器。
      截图参数：?canvas=1 裸画板；?canvas=1&annot=1 结构层；?canvas=1&sheet=cal|guide|memo|news 打开抽屉。 -->
 <style>
   :root{
@@ -118,6 +118,15 @@
   .g-quote small{display:block;font-size:14px;line-height:23px;color:var(--ink2);margin-top:8px;border-top:2px solid var(--line2);padding-top:9px}
   .yiji-wrap{position:relative;margin-top:18px;display:flex;align-items:flex-start}
   .yiji{flex:1;min-width:0;font-size:14px;line-height:24px;color:var(--ink2)}
+  .dirs{margin-top:10px;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:7px 0 8px}
+  .dirs-head{display:flex;align-items:baseline}
+  .dirs-head b{font-size:12px;line-height:18px;font-weight:600;color:var(--jade-d)}
+  .dirs-head span{margin-left:8px;font-size:11px;line-height:17px;color:var(--muted)}
+  .dirs-grid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:5px}
+  .dirs-grid > div{min-width:0;text-align:center}
+  .dirs-grid > div + div{border-left:1px solid var(--line2)}
+  .dirs-grid span{font-size:11px;line-height:16px;color:var(--muted);margin-right:4px}
+  .dirs-grid b{font-size:15px;line-height:20px;font-weight:600;color:var(--ink)}
   .yiji > * + *{margin-top:4px}
   .five-btn{flex:none;margin-left:8px;font-size:12.5px;line-height:18px;font-weight:600;color:var(--jade);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
   .five-btn:hover,.iconbtn:hover{background:var(--jade-l)}
@@ -132,12 +141,12 @@
   .track i.on.pos{background:var(--jade)} .track i.on.mid{background:#B9B2A0} .track i.on.neg{background:var(--red)}
   .frow .note{color:var(--muted)}
   .v.pos{color:var(--jade)} .v.mid{color:var(--muted)} .v.neg{color:var(--red)}
-  .todo{flex:1;min-height:0;display:flex;flex-direction:column;margin-top:16px;border-top:1px solid var(--line2);padding-top:8px}
+  .todo{flex:1;min-height:0;display:flex;flex-direction:column;margin-top:12px;border-top:1px solid var(--line2);padding-top:7px}
   .todo-h{font-size:13px;line-height:20px;color:var(--ink2);font-weight:600;margin-bottom:6px}
   .todo-cols{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr}
   .todo-col{min-width:0;min-height:0;display:grid;grid-auto-rows:1fr}
   .todo-col-r{border-left:1px solid var(--line2);padding-left:28px}
-  .todo-row{display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;align-items:center;font-size:14px;line-height:26px;padding:6px 0;border-bottom:1px dotted var(--line2);color:var(--ink2)}
+  .todo-row{display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;align-items:center;font-size:14px;line-height:23px;padding:3px 0;border-bottom:1px dotted var(--line2);color:var(--ink2)}
   .todo-col .todo-row:last-child{border-bottom:0}
   .todo-row b{color:var(--jade-d);font-weight:600}
   .todo-row span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
@@ -333,6 +342,21 @@
   #wrapGuide .gd-warn{font-size:17px;line-height:1.7}
   #wrapGuide .gd-warn li{margin-bottom:8px;padding-left:16px}
   #wrapGuide .pending-yiji > div{font-size:15px;line-height:24px;padding:9px 0}
+  #wrapGuide .gd-am-yiji{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:15px;line-height:24px;color:var(--ink2)}
+  #wrapGuide .gd-am-yiji > div{display:flex;align-items:flex-start}
+  #wrapGuide .gd-am-yiji > div > span + span{margin-left:10px}
+  #wrapGuide .gd-am-yiji .b-yi,#wrapGuide .gd-am-yiji .b-ji{flex:none;margin-top:2px}
+  #wrapGuide .gd-am-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:12px}
+  #wrapGuide .gd-am-item{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+  #wrapGuide .gd-am-item .k{font-size:11px;line-height:17px;color:var(--muted);letter-spacing:.06em}
+  #wrapGuide .gd-am-item .v{font-size:14px;line-height:21px;color:var(--ink2);margin-top:2px}
+  #wrapGuide .gd-am-hours{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
+  #wrapGuide .gd-am-hour{border:1px solid var(--line);border-radius:7px;padding:6px 4px;text-align:center;background:#fff}
+  #wrapGuide .gd-am-hour b{display:block;font-size:13px;line-height:18px;color:var(--ink)}
+  #wrapGuide .gd-am-hour em{display:block;font-style:normal;font-size:11px;line-height:16px;color:var(--muted)}
+  #wrapGuide .gd-am-hour .j{display:inline-block;margin-top:2px;font-size:11px;line-height:16px;font-weight:600}
+  #wrapGuide .gd-am-hour .j.good{color:var(--jade-d)}
+  #wrapGuide .gd-am-hour .j.bad{color:var(--red)}
   .gd-hex{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px;margin:2px 0 16px}
   .gd-hex div{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
   .gd-hex span{display:block;font-size:12px;color:var(--muted);letter-spacing:.1em}
@@ -474,6 +498,14 @@
               <button class="five-btn" id="fiveBtn" aria-controls="fivePop" aria-expanded="false"></button>
               <div class="five-pop" id="fivePop"></div>
             </div>
+            <div class="dirs" id="gDirs" hidden>
+              <div class="dirs-head"><b id="dirBranch"></b><span id="dirTime"></span></div>
+              <div class="dirs-grid">
+                <div><span>财神</span><b id="dirCai"></b></div>
+                <div><span>喜神</span><b id="dirXi"></b></div>
+                <div><span>福神</span><b id="dirFu"></b></div>
+              </div>
+            </div>
             <div class="todo" id="gTodo">
               <div class="todo-h" id="todoLabel"></div>
               <div class="todo-cols">
@@ -486,7 +518,7 @@
           <div class="guide-pending" id="guidePending" hidden>
             <div class="gp-head">
               <span class="gp-stamp">未推算</span>
-              <div class="gp-copy"><b>今日指南尚未出稿</b><span id="gpSubtitle">等待导入今日指南</span></div>
+              <div class="gp-copy"><b>今日指南尚未出稿</b><span>先看当天农历宜忌</span></div>
             </div>
             <div class="gp-sub">农 历 宜 忌</div>
             <div class="gp-row"><span class="b-yi">宜</span><span id="gpYi"></span></div>
@@ -577,7 +609,7 @@
             <div class="cal2-legend"><span><i class="pdot" style="display:inline-block"></i>可用时辰</span><span><i class="pdot p" style="display:inline-block"></i>宜祈福 + 求财</span><span>点日期看时辰</span></div>
             <div class="day-detail" id="cal2Detail"></div>
           </div>
-          <div class="sheet-ft"><span>农历及宜忌由本地历法提供</span><span>点遮罩或 Esc 关闭</span></div>
+          <div class="sheet-ft"><span>数据：51 万年历 2026 · 明戊 / 暗戊已排除</span><span>点遮罩或 Esc 关闭</span></div>
         </div>
       </div>
 

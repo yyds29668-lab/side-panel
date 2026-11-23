@@ -86,7 +86,7 @@ powershell -ExecutionPolicy Bypass -File scripts\sync_today.ps1
 
 - 天气：实时 Open-Meteo，失败保留上次成功缓存。
 - 新闻 / GitHub：抓取失败保留上次快照。
-- 经典：`quotes.json` 校验；经典卡首条读取 `today.classic`，其余 35 条照常可点。
+- 经典：`quotes.json` 校验；36 条从 06:00 起每 30 分钟轮换，23:30 后停在最后一条，次日 06:00 重置。
 
 ### 评级不默认“平”
 
