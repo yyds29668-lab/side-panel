@@ -342,18 +342,20 @@
   #wrapGuide .gd-warn{font-size:17px;line-height:1.7}
   #wrapGuide .gd-warn li{margin-bottom:8px;padding-left:16px}
   #wrapGuide .pending-yiji > div{font-size:15px;line-height:24px;padding:9px 0}
-  #wrapGuide .gd-am-yiji{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:15px;line-height:24px;color:var(--ink2)}
+  #wrapGuide .gd-am-yiji{display:block;font-size:15px;line-height:24px;color:var(--ink2)}
   #wrapGuide .gd-am-yiji > div{display:flex;align-items:flex-start}
+  #wrapGuide .gd-am-yiji > div + div{margin-top:6px}
   #wrapGuide .gd-am-yiji > div > span + span{margin-left:10px}
   #wrapGuide .gd-am-yiji .b-yi,#wrapGuide .gd-am-yiji .b-ji{flex:none;margin-top:2px}
-  #wrapGuide .gd-am-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:12px}
+  #wrapGuide .gd-am-top{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;margin-top:12px}
+  #wrapGuide .gd-am-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;margin-top:8px}
   #wrapGuide .gd-am-item{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
   #wrapGuide .gd-am-item .k{font-size:11px;line-height:17px;color:var(--muted);letter-spacing:.06em}
   #wrapGuide .gd-am-item .v{font-size:14px;line-height:21px;color:var(--ink2);margin-top:2px}
-  #wrapGuide .gd-am-hours{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
-  #wrapGuide .gd-am-hour{border:1px solid var(--line);border-radius:7px;padding:6px 4px;text-align:center;background:#fff}
-  #wrapGuide .gd-am-hour b{display:block;font-size:13px;line-height:18px;color:var(--ink)}
-  #wrapGuide .gd-am-hour em{display:block;font-style:normal;font-size:11px;line-height:16px;color:var(--muted)}
+  #wrapGuide .gd-am-hours{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:10px}
+  #wrapGuide .gd-am-hour{border:1px solid var(--line);border-radius:7px;padding:6px 2px;text-align:center;background:#fff;min-width:0}
+  #wrapGuide .gd-am-hour b{display:block;font-size:12px;line-height:18px;color:var(--ink);white-space:nowrap}
+  #wrapGuide .gd-am-hour em{display:none}
   #wrapGuide .gd-am-hour .j{display:inline-block;margin-top:2px;font-size:11px;line-height:16px;font-weight:600}
   #wrapGuide .gd-am-hour .j.good{color:var(--jade-d)}
   #wrapGuide .gd-am-hour .j.bad{color:var(--red)}

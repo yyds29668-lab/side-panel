@@ -278,14 +278,15 @@
       html += '<div class="gd-sub">农 历 宜 忌</div><div class="gd-am-yiji">';
       html += '<div><span class="b-yi">宜</span><span>' + (am.yi && am.yi.length ? esc(am.yi.join(' · ')) : '—') + '</span></div>';
       html += '<div><span class="b-ji">忌</span><span>' + (am.ji && am.ji.length ? esc(am.ji.join(' · ')) : '—') + '</span></div></div>';
-      var items = [['五行', am.wuxing], ['冲煞', am.chong], ['值神', am.zhishen], ['建除十二神', am.jianchu], ['吉神宜趋', (am.jishen || []).join(' · ')], ['胎神', am.taishen], ['凶神宜忌', (am.xiongsha || []).join(' · ')], ['二十八星宿', am.ershiba], ['彭祖百忌', am.pengzu]];
-      html += '<div class="gd-am-grid">';
-      items.forEach(function(x){ if (x[1]) html += '<div class="gd-am-item"><div class="k">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>'; });
-      html += '</div>';
+      var top = [['五行', am.wuxing], ['冲煞', am.chong], ['值神', am.zhishen]];
+      var rest = [['建除十二神', am.jianchu], ['吉神宜趋', (am.jishen || []).join(' · ')], ['胎神', am.taishen], ['凶神宜忌', (am.xiongsha || []).join(' · ')], ['二十八星宿', am.ershiba], ['彭祖百忌', am.pengzu]];
+      function amItem(x){ return x[1] ? '<div class="gd-am-item"><div class="k">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>' : ''; }
+      html += '<div class="gd-am-top">' + top.map(amItem).join('') + '</div>';
+      html += '<div class="gd-am-grid">' + rest.map(amItem).join('') + '</div>';
       if (am.hours && am.hours.length){
         html += '<div class="gd-sub">十 二 时 辰</div><div class="gd-am-hours">';
         am.hours.forEach(function(h){
-          html += '<div class="gd-am-hour"><b>' + esc(h.branch) + '时</b><em>' + esc(h.stem || '') + '</em><span class="j ' + (h.luck === '吉' ? 'good' : 'bad') + '">' + esc(h.luck || '') + '</span></div>';
+          html += '<div class="gd-am-hour"><b>' + esc((h.stem || h.branch) + '时') + '</b><span class="j ' + (h.luck === '吉' ? 'good' : 'bad') + '">' + esc(h.luck || '') + '</span></div>';
         });
         html += '</div>';
       }
