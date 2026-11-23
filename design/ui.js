@@ -887,6 +887,11 @@
     if (d.quotes && d.quotes.length){
       QUOTES = d.quotes; qi = Math.min(qi, QUOTES.length - 1); renderQuote(); renderDots();
     }
+    if (TODAY_DATA && TODAY_DATA.classic && TODAY_DATA.classic.text){
+      var c = TODAY_DATA.classic;
+      QUOTES[0] = {text:String(c.text).replace(/^「|」$/g, ''), src:c.src || '', ref:c.ref || '', a:c.analysis || TODAY_DATA.one_note || '', u:c.usage || ''};
+      qi = 0; renderQuote(); renderDots();
+    }
     if (d.news && d.news.length){
       NEWS = d.news; renderNewsBar(); renderNewsSheet();
     }

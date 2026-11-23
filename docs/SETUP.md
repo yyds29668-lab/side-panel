@@ -74,6 +74,15 @@ python scripts\collect_github.py
 
 第一次没有天气/新闻/GitHub 也能启动，只是对应卡片显示空态。
 
+指南更新后，四件同步：
+
+```powershell
+python scripts\import_guide.py --file today.json
+powershell -ExecutionPolicy Bypass -File scripts\sync_today.ps1
+```
+
+它会刷新天气、新闻、GitHub、经典，并给运行中的页面发重载信号。
+
 ## 5. 启动
 
 ```powershell

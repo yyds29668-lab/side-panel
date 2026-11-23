@@ -73,6 +73,35 @@ python scripts\collect_github.py
 
 备忘第一次运行会自动生成 8 条示例待办，可直接勾选、删除或添加。
 
+## 每日指南更新：四件同步
+
+指南更新后，天气、新闻、GitHub、经典必须在同一轮刷新：
+
+```powershell
+python scripts\import_guide.py --file today.json
+powershell -ExecutionPolicy Bypass -File scripts\sync_today.ps1
+```
+
+`sync_today.ps1` 会校验 `today.json` 的 date、运行 `refresh_daily.py` 的四个采集/校验步骤，然后给运行中的页面发重载信号。
+
+- 天气：实时 Open-Meteo，失败保留上次成功缓存。
+- 新闻 / GitHub：抓取失败保留上次快照。
+- 经典：`quotes.json` 校验；经典卡首条读取 `today.classic`，其余 35 条照常可点。
+
+### 评级不默认“平”
+
+| 等级 | 分数 |
+| --- | ---: |
+| 大吉 | 8.5–10 |
+| 吉 | 7.0–8.4 |
+| 小吉 | 6.0–6.9 |
+| 平 | 4.5–5.9 |
+| 小凶 | 3.0–4.4 |
+| 凶 | 1.0–2.9 |
+| 大凶 | 0–0.9 |
+
+先用卦象和五维定级，再填分数。像“天地否 4.8”是平，不是系统默认；泰卦 8.4/10 就是吉。
+
 ## 占卦是可选的
 
 当天没有 `today.json` 时，今日指南显示「未推算」。已配置本地历法数据时，卡片会同时显示当天农历宜忌。

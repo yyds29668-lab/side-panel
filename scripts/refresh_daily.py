@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""当日指南成稿后刷新天气、资讯与 GitHub 热点。"""
+"""当日指南成稿后刷新天气、资讯、GitHub 与经典。"""
 import argparse
 import os
 import subprocess
@@ -38,6 +38,7 @@ def main():
         codes.append(run("collect_news.py"))
     if not args.news_only and not args.weather_only:
         codes.append(run("collect_github.py"))
+        codes.append(run("collect_quotes.py"))
     print("\n面板每 60 秒看一次缓存 mtime，落盘后自动重读；也可点面板上的 ↻。")
     raise SystemExit(0 if all(c == 0 for c in codes) else 1)
 
