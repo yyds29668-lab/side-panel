@@ -84,7 +84,7 @@ Get-Content today.json -Raw | python scripts\import_guide.py
 
 ## 4. 农历宜忌与方位（可选）
 
-如果 harness 能拿到当天黄历，可以在 `today.json` 里加 `almanac`：实际宜忌、五行、冲煞、值神、建除、吉神/凶神、胎神、彭祖百忌、二十八宿和 12 时辰吉凶/财喜福方位。字段示例见 `docs/DATA.md`。没有 `almanac` 时，卡片方位和详情黄历区域隐藏，不影响指南。
+如果 harness 能拿到当天黄历，可以在 `today.json` 里加 `almanac`：实际宜忌、五行、冲煞、值神、建除、吉神/凶神、胎神、彭祖百忌、二十八宿和 12 时辰吉凶/财喜福方位；每个时辰可带 `yi` / `ji` 数组，详情会多出时辰宜忌。字段示例见 `docs/DATA.md`。没有 `almanac` 时，卡片方位和详情黄历区域隐藏，不影响指南。
 
 ## 5. 评级与经典
 

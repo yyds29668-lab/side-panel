@@ -300,25 +300,28 @@
       html += '</div>';
     }
 
+    var am2 = g.almanac;
+    if (am2 && am2.hours && am2.hours.length){
+      var cur2 = currentBranch(NOW);
+      html += '<div class="gd-sub tight">时 辰 宜 忌</div><div class="gd-hy">';
+      am2.hours.forEach(function(h){
+        var lk = h.luck || '—';
+        html += '<div class="gd-hy-cell' + (h.branch === cur2 ? ' current' : '') + '">';
+        html += '<div class="gd-hy-h"><b>' + esc((h.stem || h.branch) + '时') + '</b><span class="j ' + (lk === '吉' ? 'good' : lk === '凶' ? 'bad' : '') + '">' + esc(lk) + '</span></div>';
+        html += '<div class="gd-hy-row"><i class="yi">宜</i><span>' + (h.yi && h.yi.length ? esc(h.yi.join(' · ')) : '—') + '</span></div>';
+        html += '<div class="gd-hy-row"><i class="ji">忌</i><span>' + (h.ji && h.ji.length ? esc(h.ji.join(' · ')) : '—') + '</span></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="gd-lower"><div class="gd-lower-l">';
     var todos = guideTodos(g);
     if (todos.length){
-      html += '<div class="gd-sub">' + (stale ? '上一期可做' : '今日可做') + '</div><div class="gd-todo">';
+      html += '<div class="gd-sub tight">' + (stale ? '上一期可做' : '今日可做') + '</div><div class="gd-todo">';
       todos.forEach(function(row){ html += '<div><b>' + esc(row.k || row[0]) + '</b><span>' + esc(row.v || row[1]) + '</span></div>'; });
       html += '</div>';
     }
-
-    html += '<div class="gd-sub">五 维</div><table class="gd-five"><thead><tr><th>维</th><th>判</th><th>行动建议</th></tr></thead><tbody>';
-    for (var i = 0; i < g.five.length; i++){
-      var f = g.five[i], st = f.state < 0 ? '逆' : f.state > 0 ? '正' : '平';
-      var cls = f.state < 0 ? 'neg' : f.state > 0 ? 'pos' : 'mid';
-      html += '<tr><td><b>' + esc(f.key) + '</b></td><td class="' + cls + '"><b>' + st + '</b></td><td>' + esc(f.note) + '</td></tr>';
-    }
-    html += '</tbody></table>';
-    html += '<div class="gd-sub">时 辰</div><div class="gd-hours">';
-    for (var h = 0; h < g.hours.length; h++){
-      html += '<div class="gd-hour"><b>' + esc(g.hours[h].branch) + '时 ' + esc(g.hours[h].time) + '</b><br>' + esc(g.hours[h].note) + '</div>';
-    }
-    html += '</div><div class="gd-sub">警 示</div><ul class="gd-warn">';
+    html += '<div class="gd-sub tight">警 示</div><ul class="gd-warn">';
     for (var w = 0; w < g.warnings.length; w++){
       var txt = g.warnings[w], p = txt.indexOf('：');
       if (p < 0) p = txt.indexOf(':');
@@ -326,12 +329,20 @@
       var body = p > 0 ? txt.slice(p + 1) : txt;
       html += '<li>' + (head ? '<b>' + esc(head) + '</b>：' : '') + esc(body) + '</li>';
     }
-    html += '</ul>';
+    html += '</ul></div><div class="gd-lower-r">';
+    html += '<div class="gd-sub tight">五 维</div><table class="gd-five"><thead><tr><th>维</th><th>判</th><th>行动建议</th></tr></thead><tbody>';
+    for (var i = 0; i < g.five.length; i++){
+      var f = g.five[i], st = f.state < 0 ? '逆' : f.state > 0 ? '正' : '平';
+      var cls = f.state < 0 ? 'neg' : f.state > 0 ? 'pos' : 'mid';
+      html += '<tr><td><b>' + esc(f.key) + '</b></td><td class="' + cls + '"><b>' + st + '</b></td><td>' + esc(f.note) + '</td></tr>';
+    }
+    html += '</tbody></table>';
     html += '<div class="gd-one"><b>' + (g.one_source ? '今日卦辞' : (stale ? '上一期行动' : '今日一件')) + '</b>' + esc(g.one_thing) + '</div>';
     if (g.windows && g.windows[0]){
       var w0 = g.windows[0];
       html += '<div class="gd-window"><b>' + esc(w0.branch) + '时 ' + esc(w0.time) + '</b> · ' + esc(w0.note) + '</div>';
     }
+    html += '</div></div>';
     var upd = (g.updated_at || '').slice(0, 16).replace('T', ' ');
     html += '<div class="gd-src">来源：' + esc(g.source) + (upd ? ' · 更新 ' + esc(upd) : '') + '</div>';
     $('gdBody').innerHTML = html;
