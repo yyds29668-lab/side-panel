@@ -425,6 +425,10 @@ class PanelWindow(QWidget):
         if self.animating or not self.collapsed or self.screen_missing:
             return
         self.collapsed = False
+        # The native dot must disappear immediately; otherwise it sits above
+        # the HTML collapse dot and swallows the click while already expanded.
+        self.dot.hide()
+        self.dot.setWindowOpacity(1.0)
         self.setWindowState(Qt.WindowNoState)
         self.setGeometry(self.work)
         self.full = False
