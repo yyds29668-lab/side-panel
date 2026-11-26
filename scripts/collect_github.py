@@ -16,9 +16,16 @@ STARS = re.compile(r"([\d,]+)\s+stars? today\b", re.I)
 PURPOSES = {
     "HKUDS/CLI-Anything": "把任意命令行工具封装成 AI Agent 可调用的工具",
     "jingyaogong/minimind": "从零训练一个 64M 参数的小语言模型",
+    "elementalsouls/Claude-BugHunter": "一套 Claude Code 的漏洞挖掘与红队技能包",
+    "obra/superpowers": "Agent 技能框架与软件开发方法",
+    "cursor/plugins": "Cursor 插件规范与官方插件",
+    "firecrawl/firecrawl": "为 Agent 提供搜索、抓取与数据接入的知识基础设施",
+    "cathrynlavery/diagram-design": "给 AI 编程工具用的编辑级图表设计系统",
+    "mvanhorn/last30days-skill": "跨 Reddit、X、YouTube 等平台做主题研究的 Agent 技能",
 }
 
 TOPICS = (
+    ("AI Agent", r"\b(?:agent|agents|agentic|claude|codex|cursor|skill|skills)\b", "用于 AI Agent 工作流或技能"),
     ("设计工具", r"\b(?:design|figma|prototype|blender|typography)\b", "用于设计、原型或视觉制作"),
     ("AI 制作", r"\b(?:video generation|text.to.video|image generation|diffusion|comfyui)\b", "用于生成或编辑图像、视频等素材"),
     ("本地 AI", r"\b(?:llm|large language models?|inference|local ai|self.hosted ai)\b", "面向大模型运行或推理"),
@@ -79,7 +86,8 @@ class TrendingParser(HTMLParser):
 def select_projects(html):
     parser = TrendingParser()
     parser.feed(html)
-    chosen, others, seen = [], [], set()
+    rows, seen = [], set()
+    # Keep GitHub's own trending order; do not reorder by keyword match.
     for row in parser.items:
         name = row["name"]
         if name.lower() in seen:
@@ -95,8 +103,10 @@ def select_projects(html):
         else:
             row["summary"] = topic[2] if topic else "查看仓库介绍与使用方式"
         row["url"] = "https://github.com/" + name
-        (chosen if topic else others).append(row)
-    return (chosen + others)[:2]
+        rows.append(row)
+        if len(rows) >= 2:
+            break
+    return rows
 
 
 def main():
